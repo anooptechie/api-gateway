@@ -1,0 +1,4 @@
+{
+  "/api/inventory": "http://localhost:4001",
+  "/api/orders": "http://localhost:4002"
+}
