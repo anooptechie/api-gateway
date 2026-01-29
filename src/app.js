@@ -3,7 +3,8 @@ const { resolveRoute } = require("./proxy/routeResolver");
 const { forwardRequest } = require("./proxy/forwarder");
 const apiKeys = require("./config/apiKeys");
 const protectedRoutes = require("./config/protectedRoutes");
-const { rateLimit } = require("./rateLimit/limiter");
+const { rateLimit } = require("./rateLimit/redisLimiter");
+const OPERATIONAL_ROUTES = ["/health"];
 
 function buildApp() {
   const app = fastify({
@@ -44,7 +45,6 @@ function buildApp() {
     };
   });
 
-
   // PROTECTED ROUTE ENFORCEMENT
   app.addHook("preHandler", async (request, reply) => {
     const isProtected = protectedRoutes.some((prefix) =>
@@ -59,7 +59,10 @@ function buildApp() {
 
   // RATE LIMITING
   app.addHook("preHandler", async (request, reply) => {
-    const result = rateLimit(request);
+    if (OPERATIONAL_ROUTES.includes(request.url)) {
+      return;
+    }
+    const result = await rateLimit(request);
 
     if (!result.allowed) {
       reply
@@ -72,6 +75,9 @@ function buildApp() {
 
   // CENTRAL ROUTING
   app.addHook("preHandler", async (request, reply) => {
+    if (OPERATIONAL_ROUTES.includes(request.url)) {
+      return;
+    }
     const result = resolveRoute(request.url);
 
     if (!result) {
@@ -94,6 +100,9 @@ function buildApp() {
 
   // Catch-all route for gateway traffic
   app.all("*", async (request, reply) => {
+    if (request.url === "/health") {
+      return;
+    }
     return forwardRequest(request, reply);
   });
 

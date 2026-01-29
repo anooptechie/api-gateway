@@ -1,10 +1,10 @@
 module.exports = {
   anonymous: {
-    limit: 5,
-    windowMS: 60000,
+    limit: 2,
+    windowMs: 60000,
   },
   identified: {
     limit: 20,
-    windowMS: 60000,
+    windowMs: 60000,
   },
 };

@@ -1,11 +1,11 @@
-const store = new Map();
+// const store = new Map();
 
-function get(key) {
-  return store.get(key);
-}
+// function get(key) {
+//   return store.get(key);
+// }
 
-function set(key, value) {
-  return store.set(key, value);
-}
+// function set(key, value) {
+//   return store.set(key, value);
+// }
 
-module.exports = { get, set };
+// module.exports = { get, set };

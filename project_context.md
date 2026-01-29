@@ -171,4 +171,80 @@ Phase 2 is complete and should be considered **stable**.
 
 Future phases should build on the client identity model introduced here without changing its core assumptions.
 
+Phase 3
 
+Phase 3 introduces traffic control through distributed rate limiting.
+
+With client identity (Phase 2) already in place, the gateway now enforces usage limits consistently across instances to protect downstream services from abuse and overload.
+
+Why Rate Limiting Matters
+
+Without rate limiting:
+
+A single client can overwhelm backend services
+
+Traffic spikes can cascade into failures
+
+Fair usage cannot be enforced
+
+In real systems, rate limiting is a core gateway responsibility.
+
+Design Intent (Phase 3)
+
+The intent of Phase 3 is to:
+
+Enforce limits per client, not globally
+
+Work correctly across multiple gateway instances
+
+Avoid in-memory counters that fail in distributed setups
+
+Fail fast at the gateway boundary
+
+Correctness and predictability are prioritized over cleverness.
+
+Implementation Summary
+
+Phase 3 uses Redis as a shared state store and Lua scripting for atomic execution.
+
+Key characteristics:
+
+Atomic rate limiting using a Redis Lua script
+
+Fixed window strategy
+
+Separate buckets for:
+
+Identified clients (API key based)
+
+Anonymous clients (IP based)
+
+Correct TTL handling for reliable resets
+
+This matches production-grade gateway designs.
+
+Architectural Boundaries
+
+In Phase 3:
+
+The gateway enforces limits but does not bill or monetize usage
+
+Downstream services are shielded from abusive traffic
+
+Redis is used only for counters, not business data
+
+Relationship to Future Phases
+
+Phase 3 enables:
+
+Phase 4: Circuit breakers and failure isolation
+
+Phase 5: Metrics and observability
+
+Traffic control is a prerequisite for safe resiliency features.
+
+Status
+
+Phase 3 is complete and frozen.
+
+The final implementation is atomic, distributed, and production-aligned.
