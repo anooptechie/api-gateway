@@ -1,18 +1,58 @@
 const fastify = require("fastify");
 const { resolveRoute } = require("./proxy/routeResolver");
 const { forwardRequest } = require("./proxy/forwarder");
+const apiKeys = require("./config/apiKeys");
+const protectedRoutes = require("./config/protectedRoutes");
 
 function buildApp() {
   const app = fastify({
     logger: true,
   });
 
-  // GLOBAL INGRESS
+  // LOGGING
   app.addHook("onRequest", async (request) => {
     request.log.info(
       { method: request.method, url: request.url },
       "incoming request",
     );
+  });
+
+  // CLIENT IDENTIFICATION
+  app.addHook("preHandler", async (request, reply) => {
+    const apiKey = request.headers["x-api-key"];
+
+    // No API key → anonymous client
+    if (!apiKey) {
+      request.client = { type: "anonymous" };
+      return;
+    }
+
+    const client = apiKeys[apiKey];
+
+    // Invalid API key → reject early
+    if (!client) {
+      reply.code(401).send({ error: "Invalid API key" });
+      return reply;
+    }
+
+    // Valid API key → identified client
+    request.client = {
+      type: "identified",
+      apiKey,
+      name: client.name,
+    };
+  });
+
+  // PROTECTED ROUTE ENFORCEMENT
+  app.addHook("preHandler", async (request, reply) => {
+    const isProtected = protectedRoutes.some((prefix) =>
+      request.url.startsWith(prefix),
+    );
+
+    if (isProtected && request.client?.type !== "identified") {
+      reply.code(401).send({ error: "API key required" });
+      return reply;
+    }
   });
 
   // CENTRAL ROUTING
@@ -32,6 +72,7 @@ function buildApp() {
     );
   });
 
+  // HEALTH CHECK
   app.get("/health", async () => {
     return { status: "ok" };
   });

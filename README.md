@@ -107,5 +107,125 @@ For local testing, simple standalone services (for example, an inventory service
 
 Phase 1 is **complete and stable**.
 
-Further phases build on this foundation without changing its core behavior.
+# API Gateway — Phase 2
+
+## Overview
+
+Phase 2 extends the API Gateway by introducing **client identification**.
+
+While Phase 1 focused on request flow and routing, Phase 2 answers a new question:
+
+> **Who is calling the gateway?**
+
+This phase adds lightweight identity handling without introducing full authentication systems.
+
+---
+
+## What Phase 2 Does
+
+In Phase 2, the gateway:
+
+* Identifies clients using an `x-api-key` request header
+* Distinguishes between **anonymous** and **identified** clients
+* Rejects requests with invalid API keys early
+* Protects specific routes from anonymous access
+* Continues forwarding allowed requests to downstream services
+
+All logic is enforced **before** proxying traffic.
+
+---
+
+## What Phase 2 Does NOT Do
+
+Phase 2 intentionally does **not** include:
+
+* Login or user authentication systems
+* JWTs or OAuth flows
+* Role-based authorization
+* Rate limiting or quotas
+* Persistent storage or databases
+
+Identity handling is deliberately simple and scoped.
+
+---
+
+## Client Identification
+
+Clients may send an API key using the header:
+
+```
+x-api-key: <key>
+```
+
+Based on this header, the gateway classifies requests as:
+
+* **Anonymous** — no API key provided
+* **Identified** — valid API key provided
+* **Invalid** — API key provided but not recognized
+
+Client identity is attached to the request context and reused by later pipeline stages.
+
+---
+
+## Protected Routes
+
+Some routes require an identified client.
+
+Protected route prefixes are defined using configuration:
+
+```
+src/config/protectedRoutes.js
+```
+
+Example:
+
+```js
+module.exports = [
+  "/api/orders"
+];
+```
+
+Requests to protected routes:
+
+* Are rejected if no API key is provided
+* Are rejected if the API key is invalid
+* Are forwarded only when a valid API key is present
+
+---
+
+## Request Flow (Phase 2)
+
+```
+Client
+  → API Gateway
+      → Logging (onRequest)
+      → Client Identification
+      → Protected Route Check
+      → Route Resolution
+      → Reverse Proxy Forwarding
+          → Downstream Service
+```
+
+Requests that fail identification or access checks are rejected before reaching downstream services.
+
+---
+
+## Error Handling
+
+Common responses introduced in Phase 2:
+
+* `401 Invalid API key`
+* `401 API key required`
+
+These errors are returned directly by the gateway.
+
+---
+
+## Phase 2 Status
+
+Phase 2 is **complete and stable**.
+
+The gateway now understands **who** is calling it and can enforce basic access rules. This forms the foundation for rate limiting and traffic control in future phases.
+
+
 

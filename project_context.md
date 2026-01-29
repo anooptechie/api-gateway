@@ -81,4 +81,94 @@ Each future phase builds on the same pipeline introduced here.
 
 Phase 1 is complete and should be treated as **stable and frozen**.
 
-All further work should extend this design without altering its core assumptions.
+# PROJECT_CONTEXT — Phase 2
+
+## Phase Focus
+
+Phase 2 focuses on **client identity**, not traffic control.
+
+With routing and proxying already established in Phase 1, this phase introduces the ability for the gateway to understand **who is making a request** and apply access rules accordingly.
+
+---
+
+## Why Client Identification Matters
+
+Without client identity:
+
+* All traffic is treated the same
+* Sensitive routes cannot be protected
+* Usage cannot be attributed to callers
+* Rate limiting is not possible
+
+Client identification is a prerequisite for most real-world gateway features.
+
+---
+
+## Design Intent (Phase 2)
+
+The intent of Phase 2 is to:
+
+* Introduce identity with minimal complexity
+* Avoid authentication systems and user management
+* Classify requests early in the pipeline
+* Block unauthorized traffic before proxying
+
+The gateway remains a **boundary system**, not an auth service.
+
+---
+
+## Identity Model
+
+Phase 2 uses a **header-based API key model**:
+
+* API keys are static and in-memory
+* Keys map to simple client descriptors
+* Identity is attached to the request context
+
+This model is intentionally limited but sufficient for learning and extension.
+
+---
+
+## Architectural Boundaries
+
+In Phase 2:
+
+* The gateway identifies clients but does not authenticate users
+* Downstream services trust the gateway to enforce access rules
+* No identity data is persisted or shared externally
+
+These boundaries prevent scope creep and keep responsibilities clear.
+
+---
+
+## Failure Philosophy (Phase 2)
+
+The gateway follows a **fail-fast** approach:
+
+* Invalid API keys are rejected immediately
+* Anonymous access to protected routes is blocked early
+* Downstream services are not contacted for unauthorized requests
+
+This reduces load and limits the blast radius of bad traffic.
+
+---
+
+## Relationship to Future Phases
+
+Phase 2 enables:
+
+* Phase 3: Rate limiting per client
+* Phase 4: Failure isolation and circuit breakers
+* Phase 5: Per-client observability and metrics
+
+Without client identity, these features would not be meaningful.
+
+---
+
+## Status
+
+Phase 2 is complete and should be considered **stable**.
+
+Future phases should build on the client identity model introduced here without changing its core assumptions.
+
+
