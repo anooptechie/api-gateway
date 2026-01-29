@@ -3,6 +3,7 @@ const { resolveRoute } = require("./proxy/routeResolver");
 const { forwardRequest } = require("./proxy/forwarder");
 const apiKeys = require("./config/apiKeys");
 const protectedRoutes = require("./config/protectedRoutes");
+const { rateLimit } = require("./rateLimit/limiter");
 
 function buildApp() {
   const app = fastify({
@@ -43,6 +44,7 @@ function buildApp() {
     };
   });
 
+
   // PROTECTED ROUTE ENFORCEMENT
   app.addHook("preHandler", async (request, reply) => {
     const isProtected = protectedRoutes.some((prefix) =>
@@ -51,6 +53,19 @@ function buildApp() {
 
     if (isProtected && request.client?.type !== "identified") {
       reply.code(401).send({ error: "API key required" });
+      return reply;
+    }
+  });
+
+  // RATE LIMITING
+  app.addHook("preHandler", async (request, reply) => {
+    const result = rateLimit(request);
+
+    if (!result.allowed) {
+      reply
+        .code(429)
+        .header("Retry-After", result.retryAfter)
+        .send({ error: "Too many requests" });
       return reply;
     }
   });
