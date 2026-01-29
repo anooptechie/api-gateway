@@ -248,3 +248,89 @@ Status
 Phase 3 is complete and frozen.
 
 The final implementation is atomic, distributed, and production-aligned.
+
+# PROJECT_CONTEXT — Phase 4: Resiliency & Circuit Breaker
+
+## Phase Focus
+
+Phase 4 focuses on **resiliency**.
+
+The goal is to prevent downstream service failures from cascading into gateway‑wide outages. This phase treats the API Gateway as a defensive boundary that must protect itself under failure conditions.
+
+---
+
+## Problem Being Solved
+
+Even with rate limiting in place, downstream services can:
+
+* Become slow
+* Return repeated errors
+* Go completely offline
+
+Without protection, the gateway would continue forwarding requests, increasing latency and risking instability.
+
+---
+
+## Design Intent
+
+The design intent of Phase 4 is to:
+
+* Detect unhealthy downstream services
+* Stop sending traffic to them temporarily
+* Fail fast and return meaningful errors
+* Automatically recover without manual intervention
+
+Correctness and predictability are prioritized over sophistication.
+
+---
+
+## Circuit Breaker Design
+
+Phase 4 implements a **local, in‑memory circuit breaker** with the following characteristics:
+
+* One circuit per downstream service
+* Consecutive failure counting
+* Fixed cooldown window
+* Automatic reset after cooldown
+
+This approach avoids distributed coordination while still delivering real resiliency benefits.
+
+---
+
+## Architectural Boundaries
+
+In Phase 4:
+
+* Circuit breaker state is not shared across gateway instances
+* Redis is intentionally not used
+* No retries are attempted by the gateway
+* No half‑open probing is performed
+
+These features are deferred to future iterations.
+
+---
+
+## Interaction with Other Phases
+
+* **Phase 2** provides client identity
+* **Phase 3** controls request volume
+* **Phase 4** controls failure propagation
+
+Rate limiting and circuit breaking operate at different layers and complement each other.
+
+---
+
+## Lessons Reinforced
+
+* Not all failures are traffic problems
+* Failing fast is often safer than waiting
+* Layered defenses can interfere during testing
+* Resiliency logic belongs around downstream calls
+
+---
+
+## Status
+
+Phase 4 is **complete and frozen**.
+
+The gateway now includes foundational resiliency behavior and is ready for observability enhancements in future phases.

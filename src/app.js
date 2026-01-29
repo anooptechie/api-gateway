@@ -59,6 +59,11 @@ function buildApp() {
 
   // RATE LIMITING
   app.addHook("preHandler", async (request, reply) => {
+    // TEMP: bypass rate limiting for circuit breaker testing
+    // if (request.url.startsWith("/api/inventory")) {
+    //   return;
+    // }
+
     if (OPERATIONAL_ROUTES.includes(request.url)) {
       return;
     }
