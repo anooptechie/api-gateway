@@ -334,3 +334,203 @@ Rate limiting and circuit breaking operate at different layers and complement ea
 Phase 4 is **complete and frozen**.
 
 The gateway now includes foundational resiliency behavior and is ready for observability enhancements in future phases.
+
+PROJECT_CONTEXT — Phase 5: Observability & Metrics
+
+Add this after Phase 4 in PROJECT_CONTEXT.md 
+
+Phase 5: Observability & Metrics
+
+With routing, identity, traffic control, and resiliency already in place, this phase makes the gateway visible and explainable by exposing what it is doing internally.
+
+The goal is to understand what happened and why, using lightweight mechanisms.
+
+Why Observability Matters
+
+Without observability:
+
+Failures are hard to diagnose
+
+Traffic behavior is invisible
+
+Rate limiting and circuit breaking feel opaque
+
+Logs alone lack context
+
+Observability turns the gateway from a black box into a debuggable system.
+
+Design Intent (Phase 5)
+
+The intent of Phase 5 is to:
+
+Track gateway behavior (not business metrics)
+
+Keep metrics simple and local
+
+Add structured logs at decision boundaries
+
+Avoid external monitoring systems
+
+This phase prioritizes clarity over completeness.
+
+Metrics Model
+
+The gateway maintains an in-memory metrics store tracking:
+
+total_requests
+
+rate_limited_requests
+
+circuit_blocked_requests
+
+downstream_failures
+
+successful_requests
+
+These counters reflect gateway-level behavior only.
+
+Metrics Exposure
+
+Metrics are exposed via:
+
+GET /health/metrics
+
+The endpoint returns raw counters without aggregation, dashboards, or authentication.
+
+Structured Logging
+
+Phase 5 introduces structured logging at key gateway decision points:
+
+Incoming requests
+
+Rate limit rejections
+
+Access control failures
+
+Circuit breaker blocks
+
+Downstream failures
+
+Successful proxy forwarding
+
+Logs include contextual metadata such as:
+
+request id
+
+route / URL
+
+downstream service name
+
+HTTP status
+
+retry information (where applicable)
+
+This allows individual requests to be traced end-to-end.
+
+Logs vs Metrics
+
+Metrics answer: how often something happens
+
+Logs explain: why it happened
+
+Together, they provide actionable observability without external tooling.
+
+Architectural Boundaries
+
+In Phase 5:
+
+Metrics are in-memory only
+
+No time-series database is used
+
+No dashboards (Prometheus/Grafana) are added
+
+No tracing infrastructure is introduced
+
+These concerns are intentionally deferred.
+
+Status
+
+Phase 5 is complete and stable.
+
+The gateway is now observable, debuggable, and ready for correlation and tracing in future phases.
+
+Phase Focus
+
+Phase 6 focuses on request correlation across system boundaries.
+
+With observability already in place (Phase 5), this phase connects logs across the gateway and downstream services using a shared identifier.
+
+Problem Being Solved
+
+In distributed systems:
+
+Logs exist in multiple services
+
+Requests cross process boundaries
+
+Debugging requires correlating events across systems
+
+Without correlation IDs, logs from different services cannot be reliably connected.
+
+Design Intent (Phase 6)
+
+The intent of Phase 6 is to:
+
+Enable end-to-end request tracing
+
+Keep tracing lightweight and explicit
+
+Avoid external tracing infrastructure
+
+Build on existing structured logging
+
+The gateway remains the source of truth for correlation.
+
+Correlation Model
+
+Phase 6 uses a header-based correlation ID model:
+
+Header name: x-correlation-id
+
+Value: UUID (generated or forwarded)
+
+Scope: request lifecycle
+
+The correlation ID is attached to:
+
+Request context
+
+Gateway logs
+
+Downstream request headers
+
+Client response headers
+
+Architectural Boundaries
+
+In Phase 6:
+
+Correlation IDs are not persisted
+
+No tracing spans are recorded
+
+No timing graphs are produced
+
+Downstream services are responsible only for logging the ID
+
+This keeps responsibilities clear and avoids overengineering.
+
+Relationship to Previous Phases
+
+Phase 5 made gateway behavior visible
+
+Phase 6 connects that visibility across services
+
+Correlation IDs amplify the value of structured logging and metrics.
+
+Status
+
+Phase 6 is complete and stable.
+
+The gateway now supports cross-service request tracing and is suitable for debugging distributed request flows.

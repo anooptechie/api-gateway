@@ -411,3 +411,163 @@ This mirrors how gateways often introduce resiliency incrementally.
 Phase 4 is **complete and frozen**.
 
 The gateway now actively protects itself from downstream failures and provides predictable fail‑fast behavior.
+
+Phase 5: Observability & Metrics
+
+Phase 5 adds visibility into how the API Gateway behaves at runtime.
+
+This phase focuses on understanding gateway decisions rather than adding new traffic controls.
+
+What Phase 5 Does
+
+In Phase 5, the gateway:
+
+Tracks key operational metrics in memory
+
+Exposes metrics via a /health/metrics endpoint
+
+Adds structured logs at gateway decision boundaries
+
+Correlates logs using request IDs
+
+This makes the gateway easier to debug and reason about.
+
+Metrics Tracked
+
+The gateway tracks the following counters:
+
+Total requests received
+
+Requests blocked by rate limiting
+
+Requests blocked by circuit breakers
+
+Downstream service failures
+
+Successful proxied requests
+
+Metrics represent gateway behavior, not application data.
+
+Structured Logging
+
+Structured logs are emitted for:
+
+Incoming requests
+
+Rate-limited requests
+
+Protected route violations
+
+Circuit breaker rejections
+
+Downstream errors
+
+Successful proxy operations
+
+Logs include structured fields (JSON) to support filtering and analysis.
+
+Metrics Endpoint
+GET /health/metrics
+
+
+Example response:
+
+{
+  "total_requests": 120,
+  "rate_limited_requests": 5,
+  "successful_requests": 108
+}
+
+What Phase 5 Does NOT Do
+
+Phase 5 intentionally excludes:
+
+External monitoring systems
+
+Dashboards or visualizations
+
+Distributed tracing systems
+
+Persistent metrics storage
+
+These are deferred to future phases.
+
+Phase 5 Status
+
+Phase 5 is complete and stable.
+
+The gateway is now observable and ready for request correlation and tracing.
+
+Phase 6: Correlation IDs & Request Tracing
+
+Phase 6 adds request correlation to the API Gateway.
+
+This phase makes it possible to trace a single request across the gateway and downstream services using a shared identifier.
+
+What Phase 6 Does
+
+In Phase 6, the gateway:
+
+Generates a x-correlation-id for every incoming request (if missing)
+
+Reuses a client-provided correlation ID when present
+
+Attaches the correlation ID to all gateway logs
+
+Propagates the correlation ID to downstream services
+
+Returns the correlation ID to the client in response headers
+
+This enables end-to-end request tracing without external tracing systems.
+
+Correlation ID Behavior
+
+If the client sends x-correlation-id → it is preserved
+
+If the client does not send one → the gateway generates a UUID
+
+The same correlation ID flows through:
+
+client → gateway → downstream service
+
+gateway logs
+
+downstream service logs
+
+Example Response Header
+x-correlation-id: 6abbed60-2342-4b13-81ac-9cedcacc9fa3
+
+
+Clients can use this value to report issues or trace failures.
+
+Why This Matters
+
+Correlation IDs allow engineers to:
+
+Trace a request across multiple services
+
+Debug production issues efficiently
+
+Connect gateway decisions to downstream behavior
+
+Reason about failures in distributed systems
+
+This is a foundational observability technique used in real-world systems.
+
+What Phase 6 Does NOT Do
+
+Phase 6 intentionally does not include:
+
+Distributed tracing frameworks (OpenTelemetry, Jaeger, Zipkin)
+
+Span graphs or timing trees
+
+External tracing infrastructure
+
+This phase focuses on manual, lightweight tracing.
+
+Phase 6 Status
+
+Phase 6 is complete and stable.
+
+The gateway now supports end-to-end request tracing using correlation IDs.

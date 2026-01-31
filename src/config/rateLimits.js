@@ -4,7 +4,7 @@ module.exports = {
     windowMs: 60000,
   },
   identified: {
-    limit: 20,
+    limit: 10,
     windowMs: 60000,
   },
 };
